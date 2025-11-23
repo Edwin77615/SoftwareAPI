@@ -1,5 +1,6 @@
 package com.example.rawsource.controllers;
 
+import com.example.rawsource.entities.Role;
 import com.example.rawsource.entities.dto.user.UserDto;
 import com.example.rawsource.services.UserService;
 import jakarta.validation.Valid;
@@ -33,8 +34,8 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'BUYER', 'PROVIDER')")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<UserDto>> getAllUsers(@RequestParam(required = false) Role role) {
+        return ResponseEntity.ok(userService.getAllUsers(role));
     }
 
     @PutMapping("/{id}")

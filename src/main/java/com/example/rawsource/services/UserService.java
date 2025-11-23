@@ -1,5 +1,6 @@
 package com.example.rawsource.services;
 
+import com.example.rawsource.entities.Role;
 import com.example.rawsource.entities.dto.user.UserDto;
 import com.example.rawsource.entities.User;
 import java.util.List;
@@ -9,7 +10,7 @@ public interface UserService {
     UserDto createUser(UserDto userDTO);
     UserDto getUserById(UUID id);
     UserDto getUserByEmail(String email);
-    List<UserDto> getAllUsers();
+    List<UserDto> getAllUsers(Role role);
     UserDto updateUser(UUID id, UserDto userDTO);
     void deleteUser(UUID id);
     UserDto convertToDTO(User user);
