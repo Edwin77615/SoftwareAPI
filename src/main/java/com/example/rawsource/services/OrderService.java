@@ -1,43 +1,42 @@
 package com.example.rawsource.services;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.time.LocalDate;
 
-import com.example.rawsource.exceptions.ForbiddenException;
-import com.example.rawsource.exceptions.BadRequestException;
-import org.hibernate.validator.internal.util.logging.LoggerFactory;
-import org.slf4j.Logger;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.example.rawsource.entities.Item;
 import com.example.rawsource.entities.Inventory;
 import com.example.rawsource.entities.InventoryProduct;
+import com.example.rawsource.entities.Item;
 import com.example.rawsource.entities.Order;
 import com.example.rawsource.entities.Product;
 import com.example.rawsource.entities.Role;
 import com.example.rawsource.entities.Status;
+import com.example.rawsource.entities.Transaction;
 import com.example.rawsource.entities.User;
-import org.springframework.security.core.Authentication;
 import com.example.rawsource.entities.dto.item.AddItemDto;
 import com.example.rawsource.entities.dto.item.ItemDto;
 import com.example.rawsource.entities.dto.order.AddOrderDto;
 import com.example.rawsource.entities.dto.order.OrderDto;
 import com.example.rawsource.entities.dto.order.SendItemsDto;
 import com.example.rawsource.entities.dto.order.UpdateOrderStatusDto;
+import com.example.rawsource.exceptions.BadRequestException;
+import com.example.rawsource.exceptions.ForbiddenException;
+import com.example.rawsource.repositories.InventoryProductRepository;
+import com.example.rawsource.repositories.InventoryRepository;
 import com.example.rawsource.repositories.ItemRepository;
 import com.example.rawsource.repositories.OrderRepository;
 import com.example.rawsource.repositories.ProductRepository;
+import com.example.rawsource.repositories.TransactionRepository;
 import com.example.rawsource.repositories.UserRepository;
-import com.example.rawsource.repositories.InventoryRepository;
-import com.example.rawsource.repositories.InventoryProductRepository;
-import com.example.rawsource.services.InventoryService;
-import com.example.rawsource.services.InventoryProductService;
 
 import jakarta.transaction.Transactional;
 
@@ -52,11 +51,13 @@ public class OrderService {
     private final InventoryProductRepository inventoryProductRepository;
     private final InventoryService inventoryService;
     private final InventoryProductService inventoryProductService;
+    private final TransactionRepository transactionRepository;
 
     public OrderService(OrderRepository orderRepository, UserRepository userRepository,
             ProductRepository productRepository, ItemRepository itemRepository,
             InventoryRepository inventoryRepository, InventoryProductRepository inventoryProductRepository,
-            InventoryService inventoryService, InventoryProductService inventoryProductService) {
+            InventoryService inventoryService, InventoryProductService inventoryProductService,
+            TransactionRepository transactionRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -65,6 +66,7 @@ public class OrderService {
         this.inventoryProductRepository = inventoryProductRepository;
         this.inventoryService = inventoryService;
         this.inventoryProductService = inventoryProductService;
+        this.transactionRepository = transactionRepository;
     }
 
     public OrderDto createOrder(AddOrderDto orderInfo) {
@@ -100,6 +102,10 @@ public class OrderService {
 
             total = total.add(price.multiply(BigDecimal.valueOf(addItem.getQuantity())));
             items.add(item);
+
+            // create OUT transaction (deduction/reservation)
+            Transaction transaction = new Transaction(product.getId().getMostSignificantBits(), addItem.getQuantity(), "OUT", LocalDateTime.now());
+            transactionRepository.save(transaction);
         }
 
         order.setItems(items);
@@ -108,6 +114,8 @@ public class OrderService {
         Order savOrder = orderRepository.save(order);
         return convertToDto(savOrder, null);
     }
+
+    
 
     // All Orders
     public List<OrderDto> getAllOrders(){

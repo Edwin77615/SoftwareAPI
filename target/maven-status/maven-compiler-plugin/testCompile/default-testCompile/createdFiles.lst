@@ -1,0 +1,3 @@
+com\example\rawsource\entities\dto\user\UserDtoTest.class
+com\example\rawsource\controllers\UserControllerTest.class
+com\example\rawsource\RawsourceApplicationTests.class
