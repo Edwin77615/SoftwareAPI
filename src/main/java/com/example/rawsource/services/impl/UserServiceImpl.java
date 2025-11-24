@@ -1,6 +1,7 @@
 package com.example.rawsource.services.impl;
 
 import com.example.rawsource.entities.Inventory;
+import com.example.rawsource.entities.Role;
 import com.example.rawsource.entities.dto.user.UserDto;
 import com.example.rawsource.entities.User;
 import com.example.rawsource.repositories.InventoryRepository;
@@ -10,7 +11,6 @@ import com.example.rawsource.utils.SecureLogger;
 import com.example.rawsource.exceptions.BadRequestException;
 import com.example.rawsource.exceptions.ResourceNotFoundException;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,7 +28,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserServiceImpl implements UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    static {
+        LoggerFactory.getLogger(UserServiceImpl.class);
+    }
 
     @Autowired
     private UserRepository userRepository;
@@ -94,8 +96,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
-        return userRepository.findAll().stream()
+    public List<UserDto> getAllUsers(Role role) {
+        List<User> users;
+        if (role != null) {
+            users = userRepository.findAllByRole(role);
+        } else {
+            users = userRepository.findAll();
+        }
+        return users.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
